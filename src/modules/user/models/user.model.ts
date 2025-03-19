@@ -15,6 +15,9 @@ export class User {
   @Field(() => Role)
   role: Role;
 
+  @Field()
+  verified: boolean;
+
   @Field(() => Date)
   createdAt: Date;
 

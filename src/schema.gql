@@ -8,14 +8,30 @@ enum AvailableRole {
   USER
 }
 
+input ChangePassInput {
+  confirmPassword: String!
+  currentPassword: String!
+  newPassword: String!
+}
+
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
 
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
 type Mutation {
-  login(email: String!, password: String!): String!
-  register(registerUserData: RegisterUserInput!): User!
+  changePassword(changePassInput: ChangePassInput!): JSON!
+  forgotPassword(email: String!): JSON!
+  login(email: String!, password: String!): JSON!
+  register(registerUserData: RegisterUserInput!): JSON!
+  resendVerificationEmail(email: String!): JSON!
+  resetPassword(newPassword: String!, token: String!): JSON!
+  verifyEmail(token: String!): JSON!
 }
 
 type Query {
@@ -44,4 +60,5 @@ type User {
   id: ID!
   role: Role!
   updatedAt: DateTime!
+  verified: Boolean!
 }
