@@ -9,7 +9,7 @@ import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
-import { RegisterUserInput } from './dto/register-user.dto';
+import { RegisterUserInput } from './dto/register-user.input';
 import { EmailService } from '../email/email.service';
 import { TokenService } from '../token/token.service';
 import { TokenType } from '@prisma/client';

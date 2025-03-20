@@ -19,6 +19,18 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+"""Filter Value custom scalar type"""
+scalar FilterValue
+
+input GetUsersInput {
+  cursor: String
+  filters: [UsersFilter!]
+  limit: Int = 10
+  page: Int = 1
+  search: String
+  sorts: [UserSort!]
+}
+
 """
 The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
@@ -34,9 +46,17 @@ type Mutation {
   verifyEmail(token: String!): JSON!
 }
 
+type PageInfo {
+  hasNextPage: Boolean!
+  limit: Int!
+  nextCursor: String
+  page: Int!
+  total: Int
+}
+
 type Query {
   user(email: String!): User!
-  users: [User!]!
+  users(input: GetUsersInput!): UserConnection!
 }
 
 input RegisterUserInput {
@@ -53,6 +73,12 @@ enum Role {
   USER
 }
 
+"""Sorting directions for events"""
+enum SortDirection {
+  ASC
+  DESC
+}
+
 type User {
   createdAt: DateTime!
   email: String!
@@ -61,4 +87,30 @@ type User {
   role: Role!
   updatedAt: DateTime!
   verified: Boolean!
+}
+
+type UserConnection {
+  items: [User!]!
+  pageInfo: PageInfo!
+}
+
+input UserSort {
+  direction: SortDirection! = ASC
+  field: UserSortField!
+}
+
+"""Sort fields for users"""
+enum UserSortField {
+  CREATED_AT
+  EMAIL
+  FULL_NAME
+  ID
+  ROLE
+  UPDATED_AT
+  VERIFIED
+}
+
+input UsersFilter {
+  field: String!
+  value: FilterValue
 }

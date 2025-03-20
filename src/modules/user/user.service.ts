@@ -6,23 +6,79 @@ import {
 import { PrismaService } from '../../database/prisma.service';
 import { Prisma, User } from '@prisma/client';
 import { PrismaClientOrTransaction } from '../../common/interfaces/prisma.interface';
-import { ChangePassInput } from './dto/change-pass.dto';
+import { ChangePassInput } from './dto/change-pass.input';
 import * as bcrypt from 'bcryptjs';
+import { GetUsersInput, UserSort } from './dto/get-users.input';
+import { UserConnection } from './models/user-connection.model';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async getUsers(params: {
-    skip?: number;
-    take?: number;
-    cursor?: Prisma.UserWhereUniqueInput;
-    where?: Prisma.UserWhereInput;
-    orderBy?: Prisma.UserOrderByWithRelationInput;
-  }) {
-    const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.user.findMany({ skip, take, cursor, where, orderBy });
+  async getUsers(input: GetUsersInput): Promise<UserConnection> {
+    const { search, filters, page = 1, limit = 10, sorts, cursor } = input;
+
+    let where: Prisma.UserWhereInput = {};
+
+    if (search) {
+      where = {
+        OR: [
+          { fullName: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    if (filters && filters.length > 0) {
+      const filterConditions: Prisma.UserWhereInput[] = filters.map(
+        (filter) => {
+          const { field, value } = filter;
+          return { [field]: { equals: value } };
+        },
+      );
+
+      where = {
+        AND: [...filterConditions, ...(where.OR ? [{ OR: where.OR }] : [])],
+      };
+    }
+
+    const orderBy = this.buildOrderBy(sorts);
+
+    let cursorObj: Prisma.UserWhereUniqueInput | undefined;
+    if (cursor) {
+      cursorObj = { id: cursor };
+    }
+
+    const skip = cursor ? 1 : (page - 1) * limit;
+    const take = limit + 1;
+
+    const users = await this.prisma.user.findMany({
+      where,
+      orderBy,
+      skip,
+      take,
+      cursor: cursorObj,
+    });
+
+    const hasNextPage = users.length > limit;
+    const items = hasNextPage ? users.slice(0, limit) : users;
+
+    const total = cursor ? undefined : await this.prisma.user.count({ where });
+
+    const nextCursor = hasNextPage ? items[items.length - 1].id : undefined;
+
+    return {
+      items,
+      pageInfo: {
+        total,
+        page,
+        limit,
+        hasNextPage,
+        nextCursor,
+      },
+    };
   }
+
   async getUser(
     userWhereUniqueInput: Prisma.UserWhereUniqueInput,
   ): Promise<User | null> {
@@ -82,5 +138,23 @@ export class UserService {
     prisma: PrismaClientOrTransaction = this.prisma,
   ) {
     return prisma.user.delete({ where });
+  }
+
+  // Private methods
+  private buildOrderBy(
+    sort?: UserSort[],
+  ):
+    | Prisma.UserOrderByWithRelationInput
+    | Prisma.UserOrderByWithRelationInput[] {
+    if (!sort || sort.length === 0) {
+      return { createdAt: 'desc' };
+    }
+
+    if (sort.length === 1) {
+      const { field, direction } = sort[0];
+      return { [field]: direction };
+    }
+
+    return sort.map(({ field, direction }) => ({ [field]: direction }));
   }
 }

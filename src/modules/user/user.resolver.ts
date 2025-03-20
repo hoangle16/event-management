@@ -8,8 +8,10 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { Public } from '../../common/decorators/public.decorator';
 import GraphQLJSON from 'graphql-type-json';
-import { ChangePassInput } from './dto/change-pass.dto';
+import { ChangePassInput } from './dto/change-pass.input';
 import { GraphQLContext } from '../../common/interfaces/graphql-content.interface';
+import { UserConnection } from './models/user-connection.model';
+import { GetUsersInput } from './dto/get-users.input';
 
 // TODO
 @Resolver(() => User)
@@ -17,10 +19,12 @@ import { GraphQLContext } from '../../common/interfaces/graphql-content.interfac
 export class UserResolver {
   constructor(private readonly userService: UserService) {}
 
-  @Query(() => [User])
-  @Roles(Role.ADMIN, Role.USER)
-  async users() {
-    return this.userService.getUsers({});
+  @Query(() => UserConnection, { name: 'users' })
+  @Roles(Role.ADMIN)
+  async getUsers(
+    @Args('input', { type: () => GetUsersInput }) input: GetUsersInput,
+  ) {
+    return this.userService.getUsers(input);
   }
 
   @Query(() => User)

@@ -1,6 +1,6 @@
 import { Args, Mutation, Resolver } from '@nestjs/graphql';
 import { AuthService } from './auth.service';
-import { RegisterUserInput } from './dto/register-user.dto';
+import { RegisterUserInput } from './dto/register-user.input';
 import GraphQLJSON from 'graphql-type-json';
 
 @Resolver('auth')
